@@ -1,17 +1,15 @@
-FROM php:8.2-apache
+FROM php:8.2-cli
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
-    && a2enmod mpm_prefork rewrite headers
+WORKDIR /var/www/html
 
 COPY . /var/www/html/
 
 RUN mkdir -p /var/www/html/uploads/browsers /var/www/html/uploads/blog /var/www/html/data \
-    && chown -R www-data:www-data /var/www/html/data /var/www/html/uploads \
     && chmod -R 755 /var/www/html \
-    && chmod -R 775 /var/www/html/data /var/www/html/uploads
+    && chmod -R 777 /var/www/html/data /var/www/html/uploads
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*; PORT=${PORT:-10000}; sed -i \"s/Listen 80/Listen $PORT/g\" /etc/apache2/ports.conf; sed -i \"s/:80/:$PORT/g\" /etc/apache2/sites-available/000-default.conf; exec apache2-foreground"]
+ENV PHP_CLI_SERVER_WORKERS=4
+
+CMD ["sh", "-c", "exec php -S 0.0.0.0:${PORT:-10000} -t /var/www/html"]
