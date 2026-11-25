@@ -24,13 +24,13 @@ if (isset($_GET['release_id']) || isset($_GET['start'])) {
 
     $filename = safe_filename((string) ($release['filename'] ?? ''));
     $source = config_path('browsers') . '/' . $filename;
-    if (!is_file($source) || !is_readable($source)) {
-        fail('The installer file is temporarily unavailable.', 404);
-    }
+    $hasLocalFile = is_file($source) && is_readable($source);
 
-    $expectedChecksum = (string) ($release['checksum'] ?? '');
-    if ($expectedChecksum !== '' && strcasecmp(sha256_file($source), $expectedChecksum) !== 0) {
-        fail('The installer checksum does not match the release metadata.', 500);
+    if ($hasLocalFile) {
+        $expectedChecksum = (string) ($release['checksum'] ?? '');
+        if ($expectedChecksum !== '' && strcasecmp(sha256_file($source), $expectedChecksum) !== 0) {
+            fail('The installer checksum does not match the release metadata.', 500);
+        }
     }
 
     $record = [
@@ -46,6 +46,14 @@ if (isset($_GET['release_id']) || isset($_GET['start'])) {
 
     if (!append_json('downloads.json', $record)) {
         fail('The download could not be recorded.', 500);
+    }
+
+    if (!$hasLocalFile) {
+        $versionTag = 'v' . ltrim((string) ($release['version'] ?? '1.0.0'), 'v');
+        $remoteUrl = 'https://github.com/yunusmentese321-ai/2b2x-browser/releases/download/'
+            . rawurlencode($versionTag) . '/' . rawurlencode($filename);
+        header('Location: ' . $remoteUrl, true, 302);
+        exit;
     }
 
     $fileSize = filesize($source);
