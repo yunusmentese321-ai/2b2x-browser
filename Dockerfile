@@ -2,7 +2,8 @@ FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && a2enmod rewrite headers
+    && a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork rewrite headers
 
 COPY . /var/www/html/
 
