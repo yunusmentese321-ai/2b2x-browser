@@ -1,0 +1,5 @@
+uploads/browsers/*.exe
+*.log
+*.zip
+.DS_Store
+Thumbs.db
